@@ -116,13 +116,19 @@ export default function App() {
     ? NPCS.filter(npc => npc.location === gameState.currentLocation && npc.availableTimes.includes(gameState.currentTime)) 
     : [];
 
+  // Safe background image lookup
+  const getGlobalBg = () => {
+    if (!gameState) return ASSETS.images.mainBackground;
+    return (ASSETS.images.backgrounds as any)[gameState.currentLocation] || ASSETS.images.mainBackground;
+  };
+
   return (
     <div className="max-w-md mx-auto h-screen relative shadow-2xl overflow-hidden border-x border-gray-300 flex flex-col bg-[#f4ece1]">
-      {/* Background Layer */}
+      {/* Dynamic Background Layer (Shared Overlay) */}
       <div 
-        className="absolute inset-0 opacity-50 pointer-events-none transition-all duration-1000 select-none"
+        className="absolute inset-0 opacity-40 pointer-events-none transition-all duration-1000 select-none z-0"
         style={{ 
-          backgroundImage: `url(${gameState ? ASSETS.images.backgrounds[gameState.currentLocation] : ASSETS.images.mainBackground})`, 
+          backgroundImage: `url(${getGlobalBg()})`, 
           backgroundSize: 'cover', 
           backgroundPosition: 'center' 
         }}
