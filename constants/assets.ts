@@ -3,13 +3,13 @@ export const ASSETS = {
   images: {
     paperTexture: "https://www.transparenttextures.com/patterns/handmade-paper.png",
     magistratePortrait: "https://api.dicebear.com/7.x/initials/svg?seed=magistrate&backgroundColor=4a4a4a",
-    mainBackground: "https://images.unsplash.com/photo-1508197149814-0cc02e8b7f44?q=80&w=1000&auto=format&fit=crop",
+    mainBackground: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/6f7b9c6e4dfc9f3dff33b5a7b9813a94b8e8d789/asserts/map_picture.png",
     backgrounds: {
       Office: "https://images.unsplash.com/photo-1599508435850-2f9540b61864?q=80&w=1000&auto=format&fit=crop", 
       Market: "https://images.unsplash.com/photo-1578926375605-eaf7559b1458?q=80&w=1000&auto=format&fit=crop", 
-      Bank: "https://images.unsplash.com/photo-1621508650119-74676174a69c?q=80&w=1000&auto=format&fit=crop", // Bank-like interior
-      Suburbs: "https://images.unsplash.com/photo-1542361345-89e58247f2d5?q=80&w=1000&auto=format&fit=crop", // Suburban landscape
-      Farmland: "https://images.unsplash.com/photo-1444858291040-58f756a3bdd6?q=80&w=1000&auto=format&fit=crop" // Rice fields / rural
+      Bank: "https://images.unsplash.com/photo-1621508650119-74676174a69c?q=80&w=1000&auto=format&fit=crop", 
+      Suburbs: "https://images.unsplash.com/photo-1542361345-89e58247f2d5?q=80&w=1000&auto=format&fit=crop", 
+      Farmland: "https://images.unsplash.com/photo-1444858291040-58f756a3bdd6?q=80&w=1000&auto=format&fit=crop" 
     },
     npcPortraits: {
       ButcherLi: "https://api.dicebear.com/7.x/bottts/svg?seed=ButcherLi",
