@@ -23,7 +23,7 @@ const TimeIndicator: React.FC<{ time: TimeOfDay; day: number }> = ({ time, day }
   );
 };
 
-const GameHeader: React.FC<{ state: GameState; onOpenMap: () => void }> = ({ state, onOpenMap }) => (
+const GameHeader: React.FC<{ state: GameState }> = ({ state }) => (
   <div className="bg-[#dcd3c1]/90 backdrop-blur-md p-4 border-b-2 border-gray-800 flex justify-between items-center sticky top-0 z-30 shadow-md">
     <div className="flex items-center space-x-3">
       <div className="animate-portrait-idle">
@@ -37,21 +37,14 @@ const GameHeader: React.FC<{ state: GameState; onOpenMap: () => void }> = ({ sta
     <div className="flex items-center space-x-4">
       <div className="flex space-x-2 text-right">
         <div className="text-center">
-          <p className="text-[10px] text-gray-500 font-bold uppercase">政绩</p>
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">政绩</p>
           <p className="font-bold text-red-900 text-sm">{state.currentScore}</p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] text-gray-500 font-bold uppercase">民望</p>
+          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">民望</p>
           <p className="font-bold text-blue-900 text-sm">{state.reputation}%</p>
         </div>
       </div>
-      <button 
-        onClick={onOpenMap}
-        className="p-2 bg-gray-800 text-white rounded-lg hover:bg-black transition-all active:scale-90"
-        title="地图"
-      >
-        <span className="text-xs font-calligraphy">舆图</span>
-      </button>
     </div>
   </div>
 );
@@ -187,9 +180,9 @@ export default function App() {
 
       {gameState && (view === 'scene' || view === 'case' || view === 'loading') && (
         <>
-          <GameHeader state={gameState} onOpenMap={() => setView('map')} />
+          <GameHeader state={gameState} />
           
-          <div className="flex-1 overflow-y-auto z-20 relative flex flex-col">
+          <div className="flex-1 overflow-y-auto z-20 relative flex flex-col pb-6">
             {view === 'loading' && (
               <div className="flex flex-col items-center justify-center h-full space-y-4">
                 <div className="w-12 h-12 border-4 border-gray-800 border-t-transparent rounded-full animate-spin"></div>
@@ -234,6 +227,18 @@ export default function App() {
                   </div>
                 )}
 
+                {gameState.currentTime !== TimeOfDay.Night && (
+                  <div className="mt-8 flex justify-center">
+                    <button 
+                      onClick={() => setView('map')}
+                      className="px-10 py-4 bg-white/80 border-2 border-gray-800 text-gray-800 rounded-full font-calligraphy text-xl shadow-lg hover:bg-gray-100 active:scale-95 transition-all flex items-center space-x-2"
+                    >
+                      <span>🗺️</span>
+                      <span>返回全舆图</span>
+                    </button>
+                  </div>
+                )}
+
                 {gameState.currentTime === TimeOfDay.Night && gameState.currentLocation === Location.Office && (
                   <div className="mt-8 flex justify-center">
                     <button 
@@ -252,7 +257,7 @@ export default function App() {
                 <div className="p-6 bg-white/95 rounded-lg border-2 border-gray-800 ink-border shadow-md" style={{ backgroundImage: `url(${ASSETS.images.paperTexture})` }}>
                    <div className="flex justify-between items-center mb-4">
                       <span className="text-xs font-bold text-red-900 border-2 border-red-900 px-3 py-1 rounded-full">{currentScenario.subject}</span>
-                      <span className="text-[10px] text-gray-400 font-mono tracking-tighter tracking-widest">QY-CASE-{Math.floor(Math.random()*90000)+10000}</span>
+                      <span className="text-[10px] text-gray-400 font-mono tracking-widest">QY-CASE-{Math.floor(Math.random()*90000)+10000}</span>
                    </div>
                    <div className="flex items-start space-x-4 mb-6">
                       <img src={activeNPC.portrait} alt="NPC" className="w-16 h-16 rounded-xl border-2 border-gray-400 p-0.5 bg-gray-50 shadow-inner" />
