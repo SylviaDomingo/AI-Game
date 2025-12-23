@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Scenario, NPC } from '../types';
 import { ASSETS } from '../constants/assets';
 
@@ -15,15 +15,42 @@ interface CaseViewProps {
 export const CaseView: React.FC<CaseViewProps> = ({ 
   currentScenario, activeNPC, selectedOption, feedback, onSelectOption, onCloseCase 
 }) => {
+  const [mysteryHint, setMysteryHint] = useState<string | null>(null);
+  const [wrongAttempts, setWrongAttempts] = useState<number[]>([]);
+
+  const handleMysteryClick = (idx: number) => {
+    const opt = currentScenario.options[idx];
+    if (opt.isCorrect) {
+      setMysteryHint(null);
+      onSelectOption(idx);
+    } else {
+      setMysteryHint(opt.hint || "此事或有蹊跷，大人不妨再思量一二。");
+      setWrongAttempts(prev => [...new Set([...prev, idx])]);
+      // Play "wrong" sound locally for mystery attempts
+      new Audio(ASSETS.audio.wrong).play().catch(() => {});
+    }
+  };
+
+  const isMystery = currentScenario.type === 'mystery';
+
   return (
     <div className="p-4 space-y-4 pb-20 animate-in slide-in-from-bottom duration-500 overflow-y-auto">
+      {/* Scenario Context Card */}
       <div className="p-6 bg-white/95 rounded-lg border-2 border-gray-800 ink-border shadow-md" style={{ backgroundImage: `url(${ASSETS.images.paperTexture})` }}>
          <div className="flex justify-between items-center mb-4">
-            <span className="text-xs font-bold text-red-900 border-2 border-red-900 px-3 py-1 rounded-full">{currentScenario.subject}</span>
+            <span className="text-xs font-bold text-red-900 border-2 border-red-900 px-3 py-1 rounded-full">
+              {isMystery ? '【 奇案推理 】' : currentScenario.subject}
+            </span>
             <span className="text-[10px] text-gray-400 font-mono tracking-widest">QY-CASE-{Math.floor(Math.random()*90000)+10000}</span>
          </div>
+         
          <div className="flex items-start space-x-4 mb-6">
-            <img src={activeNPC.portrait} alt="NPC" className="w-16 h-16 rounded-xl border-2 border-gray-400 p-0.5 bg-gray-50 shadow-inner" />
+            <div className="relative">
+              <img src={activeNPC.portrait} alt="NPC" className="w-16 h-16 rounded-xl border-2 border-gray-400 p-0.5 bg-gray-50 shadow-inner" />
+              {isMystery && mysteryHint && (
+                <div className="absolute -top-2 -right-2 bg-yellow-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold animate-bounce shadow-md">!</div>
+              )}
+            </div>
             <div>
               <span className="font-calligraphy text-gray-600 text-sm">【{activeNPC.name}】</span>
               <p className="text-gray-800 font-serif leading-relaxed text-lg mt-1 italic">
@@ -31,6 +58,16 @@ export const CaseView: React.FC<CaseViewProps> = ({
               </p>
             </div>
          </div>
+
+         {/* NPC Hint/Guiding Dialogue for Mystery */}
+         {isMystery && mysteryHint && selectedOption === null && (
+           <div className="mb-4 animate-in fade-in slide-in-from-top duration-300">
+             <div className="relative bg-gray-800 text-white p-4 rounded-2xl text-sm font-serif italic shadow-lg">
+               <div className="absolute -left-2 top-4 w-4 h-4 bg-gray-800 rotate-45"></div>
+               “{mysteryHint}”
+             </div>
+           </div>
+         )}
 
          <div className="mt-4 p-5 bg-[#f8f5f0] rounded-xl border-l-8 border-gray-800 shadow-inner">
             {currentScenario.type === 'fill' ? (
@@ -52,25 +89,46 @@ export const CaseView: React.FC<CaseViewProps> = ({
          </div>
       </div>
 
+      {/* Options Grid */}
       <div className={`grid gap-4 ${currentScenario.type === 'boolean' ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        {currentScenario.options.map((opt, idx) => (
-          <button
-            key={idx}
-            onClick={() => onSelectOption(idx)}
-            disabled={selectedOption !== null}
-            className={`relative p-5 rounded-2xl border-2 transition-all font-serif group overflow-hidden ${
-              selectedOption === null 
-              ? 'border-gray-300 bg-white/90 hover:border-gray-800 hover:bg-white active:scale-95 shadow-sm' 
-              : idx === selectedOption 
-                ? opt.isCorrect ? 'border-green-600 bg-green-50 shadow-inner' : 'border-red-600 bg-red-50 shadow-inner'
-                : opt.isCorrect ? 'border-green-200 opacity-60' : 'border-gray-200 opacity-30 grayscale'
-            } ${currentScenario.type === 'boolean' ? 'py-10 text-3xl font-calligraphy' : 'text-lg'}`}
-          >
-            <span className="relative z-10">{opt.text}</span>
-          </button>
-        ))}
+        {currentScenario.options.map((opt, idx) => {
+          const isWrongAttempt = wrongAttempts.includes(idx);
+          const isFinalSelected = selectedOption === idx;
+
+          return (
+            <button
+              key={idx}
+              onClick={() => isMystery ? handleMysteryClick(idx) : onSelectOption(idx)}
+              disabled={selectedOption !== null || (isMystery && isWrongAttempt)}
+              className={`relative p-5 rounded-2xl border-2 transition-all font-serif group overflow-hidden text-left ${
+                selectedOption === null 
+                ? isWrongAttempt 
+                  ? 'border-gray-200 bg-gray-100 opacity-50 grayscale'
+                  : 'border-gray-300 bg-white/90 hover:border-gray-800 hover:bg-white active:scale-95 shadow-sm' 
+                : isFinalSelected 
+                  ? opt.isCorrect ? 'border-green-600 bg-green-50 shadow-inner' : 'border-red-600 bg-red-50 shadow-inner'
+                  : opt.isCorrect ? 'border-green-200 opacity-60' : 'border-gray-200 opacity-30 grayscale'
+              } ${currentScenario.type === 'boolean' ? 'py-10 text-3xl font-calligraphy text-center' : 'text-lg'}`}
+            >
+              <div className="flex items-center space-x-3">
+                <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold transition-colors ${
+                  isFinalSelected && opt.isCorrect ? 'bg-green-600 text-white border-green-600' : 
+                  isFinalSelected && !opt.isCorrect ? 'bg-red-600 text-white border-red-600' :
+                  isWrongAttempt ? 'bg-gray-400 text-white border-gray-400' : 'bg-white text-gray-800 border-gray-800'
+                }`}>
+                  {String.fromCharCode(65 + idx)}
+                </span>
+                <span className="relative z-10 flex-1">{opt.text}</span>
+              </div>
+              {isWrongAttempt && !isFinalSelected && (
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 italic">思虑欠妥</div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
+      {/* Result Card */}
       {selectedOption !== null && (
         <div className="p-6 rounded-2xl bg-[#fffbf2]/98 border-2 border-gray-400 shadow-2xl animate-in zoom-in duration-300 relative">
           <div className="absolute top-4 right-6 text-6xl opacity-10 select-none font-calligraphy">

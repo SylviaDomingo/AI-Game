@@ -14,6 +14,7 @@ import { MapView } from './components/MapView';
 import { LoadingView } from './components/LoadingView';
 import { SceneView } from './components/SceneView';
 import { CaseView } from './components/CaseView';
+import { MysteryDialogueView } from './components/MysteryDialogueView';
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
@@ -116,7 +117,6 @@ export default function App() {
     ? NPCS.filter(npc => npc.location === gameState.currentLocation && npc.availableTimes.includes(gameState.currentTime)) 
     : [];
 
-  // Safe background image lookup
   const getGlobalBg = () => {
     if (!gameState) return ASSETS.images.mainBackground;
     return (ASSETS.images.backgrounds as any)[gameState.currentLocation] || ASSETS.images.mainBackground;
@@ -124,7 +124,6 @@ export default function App() {
 
   return (
     <div className="max-w-md mx-auto h-screen relative shadow-2xl overflow-hidden border-x border-gray-300 flex flex-col bg-[#f4ece1]">
-      {/* Dynamic Background Layer (Shared Overlay) */}
       <div 
         className="absolute inset-0 opacity-40 pointer-events-none transition-all duration-1000 select-none z-0"
         style={{ 
@@ -167,14 +166,23 @@ export default function App() {
             )}
 
             {view === 'case' && currentScenario && activeNPC && (
-              <CaseView 
-                currentScenario={currentScenario}
-                activeNPC={activeNPC}
-                selectedOption={selectedOption}
-                feedback={feedback}
-                onSelectOption={handleOptionSelect}
-                onCloseCase={() => { advanceTime(); setView('scene'); }}
-              />
+              currentScenario.type === 'mystery' ? (
+                <MysteryDialogueView 
+                  currentScenario={currentScenario}
+                  activeNPC={activeNPC}
+                  onSelectCorrect={handleOptionSelect}
+                  onCloseCase={() => { advanceTime(); setView('scene'); }}
+                />
+              ) : (
+                <CaseView 
+                  currentScenario={currentScenario}
+                  activeNPC={activeNPC}
+                  selectedOption={selectedOption}
+                  feedback={feedback}
+                  onSelectOption={handleOptionSelect}
+                  onCloseCase={() => { advanceTime(); setView('scene'); }}
+                />
+              )
             )}
           </div>
         </>

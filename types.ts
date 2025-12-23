@@ -31,7 +31,7 @@ export enum TimeOfDay {
 
 export type Subject = '语文' | '数学' | '科学' | '历史' | '地理' | '道德与法治';
 
-export type QuestionType = 'choice' | 'boolean' | 'fill';
+export type QuestionType = 'choice' | 'boolean' | 'fill' | 'mystery';
 
 export interface Scenario {
   type: QuestionType;
@@ -43,6 +43,7 @@ export interface Scenario {
     text: string;
     isCorrect: boolean;
     feedback: string;
+    hint?: string; // Guidance for 'mystery' type when wrong
   }[];
   educationalNote: string;
   subject: Subject;
