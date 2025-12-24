@@ -101,7 +101,7 @@ export const MysteryDialogueView: React.FC<MysteryDialogueViewProps> = ({
       </div>
 
       {/* Inquiry Selection / Result Area (Fixed Bottom) */}
-      <div className="p-4 bg-gradient-to-t from-[#f4ece1] via-[#f4ece1]/95 to-transparent border-t border-gray-300/50">
+      <div className="p-4 border-t border-[#f4ece1]/95">
         {!isSolved ? (
           <div className="space-y-2 bg-white/90 backdrop-blur-md p-5 rounded-3xl border-2 border-gray-800 shadow-2xl ink-border ring-4 ring-black/5">
             <div className="flex items-center justify-center space-x-2 mb-3">

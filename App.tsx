@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { GradeLevel, Subject, Scenario, GameState, Location, TimeOfDay, NPC } from './types';
 import { CURRICULUM } from './data/curriculum';
-import { generateMagistrateCase, speakPhrase } from './services/ai';
+import { generateMagistrateCase, generateSpeech, playAudio, speakPhrase } from './services/ai';
 import { ASSETS } from './constants/assets';
 import { NPCS } from './data/npcs';
 
@@ -78,14 +78,22 @@ export default function App() {
     const randomPoint = points[Math.floor(Math.random() * points.length)];
 
     try {
-      // 异步加载语音，不阻塞逻辑
-      speakPhrase("大人，帮帮我！！");
+      // 1. 并行开始生成：案件内容和语音内容
+      const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, currentLocation);
+      const speechPromise = generateSpeech("大人，帮帮我！");
+
+      // 2. 等待两者（主要等待案件内容，语音作为增强体验）
+      const [scenario, audioData] = await Promise.all([scenarioPromise, speechPromise]);
       
-      const scenario = await generateMagistrateCase(grade, randomSubject, randomPoint, currentLocation);
       setCurrentScenario(scenario);
       setSelectedOption(null);
       setFeedback(null);
+      
+      // 3. 切换视图的同时，播放已经保存（生成好）的音频
       setView('case');
+      if (audioData) {
+        playAudio(audioData);
+      }
     } catch (error) {
       console.error(error);
       setView('scene');
@@ -125,9 +133,10 @@ export default function App() {
     return (ASSETS.images.backgrounds as any)[gameState.currentLocation] || ASSETS.images.mainBackground;
   };
 
-  return (<div className="max-w-md mx-auto h-screen relative shadow-2xl overflow-hidden border-x border-gray-300 flex flex-col bg-[#f4ece1]">
+  return (
+    <div className="max-w-md mx-auto h-screen relative shadow-2xl overflow-hidden border-x border-gray-300 flex flex-col bg-[#f4ece1]">
       <div 
-        className="absolute inset-0 opacity-40 pointer-events-none transition-all duration-1000 select-none z-0"
+        className="absolute inset-0 opacity-40 pointer-events-none select-none z-0"
         style={{ 
           backgroundImage: `url(${getGlobalBg()})`, 
           backgroundSize: 'cover', 
