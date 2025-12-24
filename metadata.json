@@ -1,5 +1,8 @@
 {
   "name": "Ink Magistrate: Scholarly Adventure",
   "description": "A traditional Chinese ink-wash style educational game where you play as a county magistrate solving villagers' problems while learning curriculum knowledge.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
 }

@@ -23,6 +23,7 @@ export const SceneView: React.FC<SceneViewProps> = ({ gameState, npcs, onBackToM
           backgroundImage: `url(${bgImage})`, 
           backgroundSize: 'cover', 
           backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
         }}
       >
         {/* Subtle ink wash overlay to unify the aesthetic */}
