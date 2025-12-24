@@ -23,6 +23,7 @@ export default function App() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeNPC, setActiveNPC] = useState<NPC | null>(null);
+  const [successAudioData, setSuccessAudioData] = useState<string | null>(null);
   
   // 背景音乐相关状态
   const [isMuted, setIsMuted] = useState(false);
@@ -48,7 +49,6 @@ export default function App() {
 
   const toggleMute = () => {
     if (bgmSourceRef.current) {
-      // Use 'any' cast to access suspend/resume which are missing from BaseAudioContext type definition in some environments
       const ctx = bgmSourceRef.current.context as any;
       if (!isMuted) {
         if (ctx.suspend) ctx.suspend();
@@ -113,18 +113,25 @@ export default function App() {
     const randomPoint = points[Math.floor(Math.random() * points.length)];
 
     try {
+      // 同时生成案件内容、开场白、以及后续的成功感谢语
       const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, currentLocation);
-      const speechPromise = generateSpeech("大人，请过目。");
+      const introSpeechPromise = generateSpeech("稍显急切", "大人，帮帮我！");
+      const successSpeechPromise = generateSpeech("稍显感激", "谢大人明察！");
 
-      const [scenario, audioData] = await Promise.all([scenarioPromise, speechPromise]);
+      const [scenario, introAudio, successAudio] = await Promise.all([
+        scenarioPromise, 
+        introSpeechPromise,
+        successSpeechPromise
+      ]);
       
       setCurrentScenario(scenario);
+      setSuccessAudioData(successAudio);
       setSelectedOption(null);
       setFeedback(null);
       
       setView('case');
-      if (audioData) {
-        playAudio(audioData);
+      if (introAudio) {
+        playAudio(introAudio);
       }
     } catch (error) {
       console.error(error);
@@ -176,16 +183,6 @@ export default function App() {
         }}
       ></div>
 
-      {/* 音乐控制浮窗 */}
-      <button 
-        onClick={toggleMute}
-        className="fixed top-4 right-4 z-50 w-10 h-10 bg-white/50 backdrop-blur-sm rounded-full border border-gray-400 flex items-center justify-center shadow-lg transition-all active:scale-90"
-      >
-        <span className={`text-xl ${!isMuted ? 'animate-pulse' : 'opacity-50'}`}>
-          {!isMuted ? '🎵' : '🔇'}
-        </span>
-      </button>
-
       {view === 'start' && <StartView onStart={startNewGame} />}
       
       {view === 'intro' && gameState && (
@@ -204,7 +201,11 @@ export default function App() {
 
       {gameState && (view === 'scene' || view === 'case' || view === 'loading') && (
         <>
-          <GameHeader state={gameState} />
+          <GameHeader 
+            state={gameState} 
+            isMuted={isMuted} 
+            onToggleMute={toggleMute} 
+          />
           <div className="flex-1 overflow-y-auto z-20 relative flex flex-col pb-6">
             {view === 'loading' && <LoadingView />}
 
@@ -223,6 +224,7 @@ export default function App() {
                   <MysteryDialogueView 
                     currentScenario={currentScenario}
                     activeNPC={activeNPC}
+                    successAudioData={successAudioData}
                     onSelectCorrect={handleOptionSelect}
                     onCloseCase={() => { advanceTime(); setView('scene'); }}
                   />
@@ -230,6 +232,7 @@ export default function App() {
                     <CaseView 
                       currentScenario={currentScenario}
                       activeNPC={activeNPC}
+                      successAudioData={successAudioData}
                       selectedOption={selectedOption}
                       feedback={feedback}
                       onSelectOption={handleOptionSelect}

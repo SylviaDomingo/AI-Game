@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Scenario, NPC } from '../types';
 import { ASSETS } from '../constants/assets';
+import { playAudio } from '../services/ai';
 
 interface Message {
   id: string;
@@ -13,12 +14,13 @@ interface Message {
 interface MysteryDialogueViewProps {
   currentScenario: Scenario;
   activeNPC: NPC;
+  successAudioData: string | null;
   onSelectCorrect: (idx: number) => void;
   onCloseCase: () => void;
 }
 
 export const MysteryDialogueView: React.FC<MysteryDialogueViewProps> = ({ 
-  currentScenario, activeNPC, onSelectCorrect, onCloseCase 
+  currentScenario, activeNPC, successAudioData, onSelectCorrect, onCloseCase 
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     { id: 'start', sender: 'npc', text: currentScenario.description, timestamp: Date.now() }
@@ -54,6 +56,9 @@ export const MysteryDialogueView: React.FC<MysteryDialogueViewProps> = ({
         };
         setMessages(prev => [...prev, npcMsg]);
         new Audio(ASSETS.audio.correct).play().catch(() => {});
+        if (successAudioData) {
+          playAudio(successAudioData);
+        }
         onSelectCorrect(idx);
       } else {
         const npcMsg: Message = { 

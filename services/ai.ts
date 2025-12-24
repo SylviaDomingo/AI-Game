@@ -34,19 +34,18 @@ export async function playAudio(base64Data: string, loop: boolean = false): Prom
   }
 }
 
-// 异步生成具有古风韵味的背景音乐（通过 TTS 模拟空灵旋律）
+// 异步生成具有古风韵味的背景音乐
 export const generateAmbientMusic = async (): Promise<string | null> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // 通过 TTS 模型引导生成一段只有“唔/啊”等轻柔哼唱、不带文字、充满古琴/长笛意境的旋律
+    // 简化指令，避免触发模型内部 500 错误（过度约束有时会导致生成失败）
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: "请不要说话，只用轻柔、空灵、悠然的‘唔’声，模仿一段中国古代古琴或长笛的恬静旋律，节奏缓慢闲适，营造出一种水墨画般的意境。" }] }],
+      contents: [{ parts: [{ text: "请用极其轻柔、缓慢、悠长的'唔'声哼唱一段具有中国古风禅意的旋律，听起来像是在远山传来的箫声，不要有任何歌词或说话声，节奏极其缓慢平稳。" }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
           voiceConfig: {
-            // 选择较为柔和的声音
             prebuiltVoiceConfig: { voiceName: 'Puck' },
           },
         },
@@ -56,17 +55,18 @@ export const generateAmbientMusic = async (): Promise<string | null> => {
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
   } catch (error) {
     console.error("Music Generation Error:", error);
+    // 如果失败，返回 null 让应用层处理（通常是静音或使用默认资源）
     return null;
   }
 };
 
 // 异步生成语音数据而不播放
-export const generateSpeech = async (text: string): Promise<string | null> => {
+export const generateSpeech = async (adj:string, text: string): Promise<string | null> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `用稳重、有礼貌的中国古代口音说: ${text}` }] }],
+      contents: [{ parts: [{ text: `用${adj}的中国古代口音说: ${text}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -84,9 +84,9 @@ export const generateSpeech = async (text: string): Promise<string | null> => {
   }
 };
 
-// 即时生成并播放（用于互动反馈）
-export const speakPhrase = async (text: string) => {
-  const audioData = await generateSpeech(text);
+// 即时生成并播放
+export const speakPhrase = async (adj:string, text: string) => {
+  const audioData = await generateSpeech(adj,text);
   if (audioData) {
     await playAudio(audioData);
   }
@@ -108,13 +108,21 @@ export const generateMagistrateCase = async (
     学科：[${subject}]，适合[${grade}]水平。
     核心知识点：[${knowledgePoint}]。
 
-    请随机选择一种题型生成（choice, boolean, fill, mystery）。
-    如果是 mystery 类型：
-    - description: 提供一个令人困惑或悬疑的开头。
-    - question: 县令需要问：“此事真相究竟如何？”
-    - options: 提供3个选项。只有一个是通往真相。错误选项需提供 hint (NPC的自然回复)。
-    
-    输出JSON格式，风格古风半文言，浅显生动。
+    请随机选择一种题型生成：
+    1. 'choice' (选择题): 经典的公堂断案。
+    2. 'boolean' (是非判断): 乡亲描述知识点，判断正误。
+    3. 'fill' (填空题): 对话或公文挖空（请用'___'作为占位符）。
+    4. 'mystery' (海龟汤交互推理): 这是一个多轮互动的对话逻辑。
+       - description: 提供一个令人困惑或悬疑的开头（汤面）。
+       - question: 县令需要问：“此事真相究竟如何？”
+       - options: 
+         - 提供3个选项，每个选项代表县令的一种“质疑”或“调查方向”。
+         - 只有一个是通往真相（汤底）的“关键突破”。
+         - 另外两个是“误区”或“次要线索”。
+         - 重点：对于错误选项，必须在 'hint' 字段提供 NPC 的自然回复。NPC 应以对话的形式指出逻辑漏洞，并提供一个引导性提示，但绝不能说出正确答案，也不能让玩家出戏。
+         - feedback: 选项被选中后的最终解释（汤底）。
+
+    输出JSON格式，风格古风半文言，浅显生动，确保逻辑严密且富有教育意义。
     `;
 
   const response = await ai.models.generateContent({

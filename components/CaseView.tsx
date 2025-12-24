@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { Scenario, NPC } from '../types';
 import { ASSETS } from '../constants/assets';
-import { speakPhrase } from '../services/ai';
+import { playAudio } from '../services/ai';
 
 interface CaseViewProps {
   currentScenario: Scenario;
   activeNPC: NPC;
+  successAudioData: string | null;
   selectedOption: number | null;
   feedback: string | null;
   onSelectOption: (idx: number) => void;
@@ -14,15 +15,15 @@ interface CaseViewProps {
 }
 
 export const CaseView: React.FC<CaseViewProps> = ({ 
-  currentScenario, activeNPC, selectedOption, feedback, onSelectOption, onCloseCase 
+  currentScenario, activeNPC, successAudioData, selectedOption, feedback, onSelectOption, onCloseCase 
 }) => {
   const [mysteryHint, setMysteryHint] = useState<string | null>(null);
   const [wrongAttempts, setWrongAttempts] = useState<number[]>([]);
 
   const handleOptionClick = (idx: number) => {
     const opt = currentScenario.options[idx];
-    if (opt.isCorrect) {
-      speakPhrase("谢大人明察！");
+    if (opt.isCorrect && successAudioData) {
+      playAudio(successAudioData);
     }
     onSelectOption(idx);
   };
@@ -31,7 +32,9 @@ export const CaseView: React.FC<CaseViewProps> = ({
     const opt = currentScenario.options[idx];
     if (opt.isCorrect) {
       setMysteryHint(null);
-      speakPhrase("谢大人明察！");
+      if (successAudioData) {
+        playAudio(successAudioData);
+      }
       onSelectOption(idx);
     } else {
       setMysteryHint(opt.hint || "此事或有蹊跷，大人不妨再思量一二。");
