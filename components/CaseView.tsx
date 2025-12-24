@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Scenario, NPC } from '../types';
 import { ASSETS } from '../constants/assets';
+import { speakPhrase } from '../services/ai';
 
 interface CaseViewProps {
   currentScenario: Scenario;
@@ -18,15 +19,23 @@ export const CaseView: React.FC<CaseViewProps> = ({
   const [mysteryHint, setMysteryHint] = useState<string | null>(null);
   const [wrongAttempts, setWrongAttempts] = useState<number[]>([]);
 
+  const handleOptionClick = (idx: number) => {
+    const opt = currentScenario.options[idx];
+    if (opt.isCorrect) {
+      speakPhrase("谢大人明察！");
+    }
+    onSelectOption(idx);
+  };
+
   const handleMysteryClick = (idx: number) => {
     const opt = currentScenario.options[idx];
     if (opt.isCorrect) {
       setMysteryHint(null);
+      speakPhrase("谢大人明察！");
       onSelectOption(idx);
     } else {
       setMysteryHint(opt.hint || "此事或有蹊跷，大人不妨再思量一二。");
       setWrongAttempts(prev => [...new Set([...prev, idx])]);
-      // Play "wrong" sound locally for mystery attempts
       new Audio(ASSETS.audio.wrong).play().catch(() => {});
     }
   };
@@ -34,8 +43,7 @@ export const CaseView: React.FC<CaseViewProps> = ({
   const isMystery = currentScenario.type === 'mystery';
 
   return (
-    <div className="p-4 space-y-4 pb-20 animate-in slide-in-from-bottom duration-500 overflow-y-auto">
-      {/* Scenario Context Card */}
+    <div className="p-4 space-y-4 pb-20 animate-in slide-in-from-bottom duration-500 overflow-y-auto h-full">
       <div className="p-6 bg-white/95 rounded-lg border-2 border-gray-800 ink-border shadow-md" style={{ backgroundImage: `url(${ASSETS.images.paperTexture})` }}>
          <div className="flex justify-between items-center mb-4">
             <span className="text-xs font-bold text-red-900 border-2 border-red-900 px-3 py-1 rounded-full">
@@ -59,7 +67,6 @@ export const CaseView: React.FC<CaseViewProps> = ({
             </div>
          </div>
 
-         {/* NPC Hint/Guiding Dialogue for Mystery */}
          {isMystery && mysteryHint && selectedOption === null && (
            <div className="mb-4 animate-in fade-in slide-in-from-top duration-300">
              <div className="relative bg-gray-800 text-white p-4 rounded-2xl text-sm font-serif italic shadow-lg">
@@ -89,7 +96,6 @@ export const CaseView: React.FC<CaseViewProps> = ({
          </div>
       </div>
 
-      {/* Options Grid */}
       <div className={`grid gap-4 ${currentScenario.type === 'boolean' ? 'grid-cols-2' : 'grid-cols-1'}`}>
         {currentScenario.options.map((opt, idx) => {
           const isWrongAttempt = wrongAttempts.includes(idx);
@@ -98,7 +104,7 @@ export const CaseView: React.FC<CaseViewProps> = ({
           return (
             <button
               key={idx}
-              onClick={() => isMystery ? handleMysteryClick(idx) : onSelectOption(idx)}
+              onClick={() => isMystery ? handleMysteryClick(idx) : handleOptionClick(idx)}
               disabled={selectedOption !== null || (isMystery && isWrongAttempt)}
               className={`relative p-5 rounded-2xl border-2 transition-all font-serif group overflow-hidden text-left ${
                 selectedOption === null 
@@ -120,15 +126,11 @@ export const CaseView: React.FC<CaseViewProps> = ({
                 </span>
                 <span className="relative z-10 flex-1">{opt.text}</span>
               </div>
-              {isWrongAttempt && !isFinalSelected && (
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 italic">思虑欠妥</div>
-              )}
             </button>
           );
         })}
       </div>
 
-      {/* Result Card */}
       {selectedOption !== null && (
         <div className="p-6 rounded-2xl bg-[#fffbf2]/98 border-2 border-gray-400 shadow-2xl animate-in zoom-in duration-300 relative">
           <div className="absolute top-4 right-6 text-6xl opacity-10 select-none font-calligraphy">

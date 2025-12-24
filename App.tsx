@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { GradeLevel, Subject, Scenario, GameState, Location, TimeOfDay, NPC } from './types';
 import { CURRICULUM } from './data/curriculum';
-import { generateMagistrateCase } from './services/ai';
+import { generateMagistrateCase, speakPhrase } from './services/ai';
 import { ASSETS } from './constants/assets';
 import { NPCS } from './data/npcs';
 
@@ -78,6 +78,9 @@ export default function App() {
     const randomPoint = points[Math.floor(Math.random() * points.length)];
 
     try {
+      // 异步加载语音，不阻塞逻辑
+      speakPhrase("大人，请过目。");
+      
       const scenario = await generateMagistrateCase(grade, randomSubject, randomPoint, currentLocation);
       setCurrentScenario(scenario);
       setSelectedOption(null);
@@ -152,37 +155,43 @@ export default function App() {
       {gameState && (view === 'scene' || view === 'case' || view === 'loading') && (
         <>
           <GameHeader state={gameState} />
-          <div className="flex-1 overflow-y-auto z-20 relative flex flex-col pb-6">
+          <div className="flex-1 overflow-hidden z-20 relative flex flex-col">
             {view === 'loading' && <LoadingView />}
 
             {view === 'scene' && (
-              <SceneView 
-                gameState={gameState} 
-                npcs={visibleNPCs} 
-                onBackToMap={() => setView('map')} 
-                onStartCase={startCase}
-                onRest={handleRest}
-              />
+              <div className="flex-1 overflow-y-auto pb-6">
+                <SceneView 
+                  gameState={gameState} 
+                  npcs={visibleNPCs} 
+                  onBackToMap={() => setView('map')} 
+                  onStartCase={startCase}
+                  onRest={handleRest}
+                />
+              </div>
             )}
 
             {view === 'case' && currentScenario && activeNPC && (
-              currentScenario.type === 'mystery' ? (
-                <MysteryDialogueView 
-                  currentScenario={currentScenario}
-                  activeNPC={activeNPC}
-                  onSelectCorrect={handleOptionSelect}
-                  onCloseCase={() => { advanceTime(); setView('scene'); }}
-                />
-              ) : (
-                <CaseView 
-                  currentScenario={currentScenario}
-                  activeNPC={activeNPC}
-                  selectedOption={selectedOption}
-                  feedback={feedback}
-                  onSelectOption={handleOptionSelect}
-                  onCloseCase={() => { advanceTime(); setView('scene'); }}
-                />
-              )
+              <div className="flex-1 overflow-hidden">
+                {currentScenario.type === 'mystery' ? (
+                  <MysteryDialogueView 
+                    currentScenario={currentScenario}
+                    activeNPC={activeNPC}
+                    onSelectCorrect={handleOptionSelect}
+                    onCloseCase={() => { advanceTime(); setView('scene'); }}
+                  />
+                ) : (
+                  <div className="h-full overflow-y-auto pb-6">
+                    <CaseView 
+                      currentScenario={currentScenario}
+                      activeNPC={activeNPC}
+                      selectedOption={selectedOption}
+                      feedback={feedback}
+                      onSelectOption={handleOptionSelect}
+                      onCloseCase={() => { advanceTime(); setView('scene'); }}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </>
