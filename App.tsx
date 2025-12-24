@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GradeLevel, Subject, Scenario, GameState, Location, TimeOfDay, NPC } from './types';
 import { CURRICULUM } from './data/curriculum';
-import { generateMagistrateCase, generateSpeech, playAudio, speakPhrase } from './services/ai';
+import { generateMagistrateCase, generateSpeech, playAudio, speakPhrase, generateAmbientMusic } from './services/ai';
 import { ASSETS } from './constants/assets';
 import { NPCS } from './data/npcs';
 
@@ -23,6 +23,41 @@ export default function App() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [activeNPC, setActiveNPC] = useState<NPC | null>(null);
+  
+  // 背景音乐相关状态
+  const [isMuted, setIsMuted] = useState(false);
+  const bgmSourceRef = useRef<AudioBufferSourceNode | null>(null);
+
+  // 游戏初始加载时生成背景音乐
+  useEffect(() => {
+    const initBGM = async () => {
+      const musicData = await generateAmbientMusic();
+      if (musicData) {
+        const source = await playAudio(musicData, true); // true 表示循环播放
+        bgmSourceRef.current = source;
+      }
+    };
+    initBGM();
+    
+    return () => {
+      if (bgmSourceRef.current) {
+        bgmSourceRef.current.stop();
+      }
+    };
+  }, []);
+
+  const toggleMute = () => {
+    if (bgmSourceRef.current) {
+      // Use 'any' cast to access suspend/resume which are missing from BaseAudioContext type definition in some environments
+      const ctx = bgmSourceRef.current.context as any;
+      if (!isMuted) {
+        if (ctx.suspend) ctx.suspend();
+      } else {
+        if (ctx.resume) ctx.resume();
+      }
+    }
+    setIsMuted(!isMuted);
+  };
 
   const startNewGame = (name: string, grade: GradeLevel) => {
     setGameState({
@@ -78,18 +113,15 @@ export default function App() {
     const randomPoint = points[Math.floor(Math.random() * points.length)];
 
     try {
-      // 1. 并行开始生成：案件内容和语音内容
       const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, currentLocation);
-      const speechPromise = generateSpeech("大人，帮帮我！");
+      const speechPromise = generateSpeech("大人，请过目。");
 
-      // 2. 等待两者（主要等待案件内容，语音作为增强体验）
       const [scenario, audioData] = await Promise.all([scenarioPromise, speechPromise]);
       
       setCurrentScenario(scenario);
       setSelectedOption(null);
       setFeedback(null);
       
-      // 3. 切换视图的同时，播放已经保存（生成好）的音频
       setView('case');
       if (audioData) {
         playAudio(audioData);
@@ -143,6 +175,16 @@ export default function App() {
           backgroundPosition: 'center' 
         }}
       ></div>
+
+      {/* 音乐控制浮窗 */}
+      <button 
+        onClick={toggleMute}
+        className="fixed top-4 right-4 z-50 w-10 h-10 bg-white/50 backdrop-blur-sm rounded-full border border-gray-400 flex items-center justify-center shadow-lg transition-all active:scale-90"
+      >
+        <span className={`text-xl ${!isMuted ? 'animate-pulse' : 'opacity-50'}`}>
+          {!isMuted ? '🎵' : '🔇'}
+        </span>
+      </button>
 
       {view === 'start' && <StartView onStart={startNewGame} />}
       
