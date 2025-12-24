@@ -35,13 +35,13 @@ export async function playAudio(base64Data: string, loop: boolean = false): Prom
 }
 
 // 异步生成具有古风韵味的背景音乐
+// 针对 500 错误：简化了提示词，去掉了可能导致模型逻辑冲突的“不许说话”等强否定词
 export const generateAmbientMusic = async (): Promise<string | null> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    // 简化指令，避免触发模型内部 500 错误（过度约束有时会导致生成失败）
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: "请用极其轻柔、缓慢、悠长的'唔'声哼唱一段具有中国古风禅意的旋律，听起来像是在远山传来的箫声，不要有任何歌词或说话声，节奏极其缓慢平稳。" }] }],
+      contents: [{ parts: [{ text: "以极其缓慢、空灵的语气，轻声吐露一段悠长的‘呜’声，仿佛远山传来的笛声在山谷回荡，节奏平稳而神秘。" }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {
@@ -54,8 +54,8 @@ export const generateAmbientMusic = async (): Promise<string | null> => {
 
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
   } catch (error) {
-    console.error("Music Generation Error:", error);
-    // 如果失败，返回 null 让应用层处理（通常是静音或使用默认资源）
+    console.error("Music Generation Error (Fallback triggered):", error);
+    // 500 错误通常是瞬时的或指令过于复杂。
     return null;
   }
 };

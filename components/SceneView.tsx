@@ -78,7 +78,7 @@ export const SceneView: React.FC<SceneViewProps> = ({ gameState, npcs, onBackToM
 
         {/* Action Buttons */}
         <div className="flex flex-col items-center space-y-4 pb-4">
-          {gameState.currentTime !== TimeOfDay.Night && (
+          {(gameState.currentTime !== TimeOfDay.Night || gameState.currentLocation !== Location.Office )&& (
             <button 
               onClick={onBackToMap}
               className="px-12 py-4 bg-white/95 border-2 border-gray-800 text-gray-900 rounded-full font-calligraphy text-2xl shadow-xl hover:bg-white active:scale-95 transition-all flex items-center space-x-3 group"

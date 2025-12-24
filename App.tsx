@@ -16,6 +16,8 @@ import { SceneView } from './components/SceneView';
 import { CaseView } from './components/CaseView';
 import { MysteryDialogueView } from './components/MysteryDialogueView';
 
+const QUEUE_TARGET_SIZE = 1; // 每个地点的预加载目标数量
+
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [view, setView] = useState<'start' | 'intro' | 'map' | 'loading' | 'scene' | 'case'>('start');
@@ -77,8 +79,8 @@ export default function App() {
 
     const locations = Object.values(Location);
     for (const loc of locations) {
-      // 如果队列为空且没有正在生成，则发起请求
-      if (caseQueues[loc].length < 1 && !generatingLocations.current.has(loc)) {
+      // 如果队列少于目标数量且没有正在生成，则发起请求
+      if (caseQueues[loc].length < QUEUE_TARGET_SIZE && !generatingLocations.current.has(loc)) {
         generatingLocations.current.add(loc);
         
         // 异步生成，不阻塞主线程
@@ -105,6 +107,9 @@ export default function App() {
               ...prev,
               [loc]: [...prev[loc], { scenario, introAudio, successAudio }]
             }));
+            
+            // 生成完一个后，如果还是没满，递归检查一次
+            setTimeout(() => refillQueues(), 500);
           } catch (err) {
             console.error(`Pre-loading failed for ${loc}:`, err);
           } finally {
