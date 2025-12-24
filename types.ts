@@ -50,6 +50,12 @@ export interface Scenario {
   knowledgePoint: string;
 }
 
+export interface QueuedCase {
+  scenario: Scenario;
+  introAudio: string | null;
+  successAudio: string | null;
+}
+
 export interface GameState {
   playerName: string;
   grade: GradeLevel;

@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { GradeLevel, Subject, Scenario, GameState, Location, TimeOfDay, NPC } from './types';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { GradeLevel, Subject, Scenario, GameState, Location, TimeOfDay, NPC, QueuedCase } from './types';
 import { CURRICULUM } from './data/curriculum';
-import { generateMagistrateCase, generateSpeech, playAudio, speakPhrase, generateAmbientMusic } from './services/ai';
+import { generateMagistrateCase, generateSpeech, playAudio, generateAmbientMusic } from './services/ai';
 import { ASSETS } from './constants/assets';
 import { NPCS } from './data/npcs';
 
@@ -25,6 +25,18 @@ export default function App() {
   const [activeNPC, setActiveNPC] = useState<NPC | null>(null);
   const [successAudioData, setSuccessAudioData] = useState<string | null>(null);
   
+  // 案件预加载队列
+  const [caseQueues, setCaseQueues] = useState<Record<Location, QueuedCase[]>>({
+    [Location.Office]: [],
+    [Location.Market]: [],
+    [Location.Bank]: [],
+    [Location.Suburbs]: [],
+    [Location.Farmland]: []
+  });
+
+  // 正在生成的地点标记，防止重复请求
+  const generatingLocations = useRef<Set<Location>>(new Set());
+
   // 背景音乐相关状态
   const [isMuted, setIsMuted] = useState(false);
   const bgmSourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -58,6 +70,57 @@ export default function App() {
     }
     setIsMuted(!isMuted);
   };
+
+  // 后台预加载逻辑
+  const refillQueues = useCallback(async () => {
+    if (!gameState) return;
+
+    const locations = Object.values(Location);
+    for (const loc of locations) {
+      // 如果队列为空且没有正在生成，则发起请求
+      if (caseQueues[loc].length < 1 && !generatingLocations.current.has(loc)) {
+        generatingLocations.current.add(loc);
+        
+        // 异步生成，不阻塞主线程
+        (async () => {
+          try {
+            const grade = gameState.grade;
+            const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
+            const subjects = Object.keys(curriculumForGrade);
+            const randomSubject = subjects[Math.floor(Math.random() * subjects.length)] as Subject;
+            const points = curriculumForGrade[randomSubject];
+            const randomPoint = points[Math.floor(Math.random() * points.length)];
+
+            const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, loc);
+            const introSpeechPromise = generateSpeech("稍显急切", "大人，帮帮我！");
+            const successSpeechPromise = generateSpeech("稍显感激", "谢大人明察！");
+
+            const [scenario, introAudio, successAudio] = await Promise.all([
+              scenarioPromise, 
+              introSpeechPromise,
+              successSpeechPromise
+            ]);
+
+            setCaseQueues(prev => ({
+              ...prev,
+              [loc]: [...prev[loc], { scenario, introAudio, successAudio }]
+            }));
+          } catch (err) {
+            console.error(`Pre-loading failed for ${loc}:`, err);
+          } finally {
+            generatingLocations.current.delete(loc);
+          }
+        })();
+      }
+    }
+  }, [gameState, caseQueues]);
+
+  // 当进入地图或完成案件时触发预加载
+  useEffect(() => {
+    if (view === 'map' || view === 'scene') {
+      refillQueues();
+    }
+  }, [view, refillQueues]);
 
   const startNewGame = (name: string, grade: GradeLevel) => {
     setGameState({
@@ -102,40 +165,62 @@ export default function App() {
   const startCase = async (npc: NPC) => {
     if (gameState?.currentTime === TimeOfDay.Night) return;
     setActiveNPC(npc);
-    setView('loading');
-    
-    const grade = gameState!.grade;
-    const currentLocation = gameState!.currentLocation;
-    const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
-    const subjects = Object.keys(curriculumForGrade);
-    const randomSubject = subjects[Math.floor(Math.random() * subjects.length)] as Subject;
-    const points = curriculumForGrade[randomSubject];
-    const randomPoint = points[Math.floor(Math.random() * points.length)];
 
-    try {
-      // 同时生成案件内容、开场白、以及后续的成功感谢语
-      const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, currentLocation);
-      const introSpeechPromise = generateSpeech("稍显急切", "大人，帮帮我！");
-      const successSpeechPromise = generateSpeech("稍显感激", "谢大人明察！");
+    const loc = gameState!.currentLocation;
+    const queue = caseQueues[loc];
 
-      const [scenario, introAudio, successAudio] = await Promise.all([
-        scenarioPromise, 
-        introSpeechPromise,
-        successSpeechPromise
-      ]);
+    // 优先从队列中获取
+    if (queue.length > 0) {
+      const [{ scenario, introAudio, successAudio }, ...rest] = queue;
       
+      // 更新队列并切换视图
+      setCaseQueues(prev => ({ ...prev, [loc]: rest }));
       setCurrentScenario(scenario);
       setSuccessAudioData(successAudio);
       setSelectedOption(null);
       setFeedback(null);
-      
       setView('case');
+      
       if (introAudio) {
         playAudio(introAudio);
       }
-    } catch (error) {
-      console.error(error);
-      setView('scene');
+      
+      // 消耗了一个后，触发异步补货
+      refillQueues();
+    } else {
+      // 队列为空（玩家操作极快时），走原有的 Loading 逻辑
+      setView('loading');
+      
+      const grade = gameState!.grade;
+      const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
+      const subjects = Object.keys(curriculumForGrade);
+      const randomSubject = subjects[Math.floor(Math.random() * subjects.length)] as Subject;
+      const points = curriculumForGrade[randomSubject];
+      const randomPoint = points[Math.floor(Math.random() * points.length)];
+
+      try {
+        const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, loc);
+        const introSpeechPromise = generateSpeech("稍显急切", "大人，帮帮我！");
+        const successSpeechPromise = generateSpeech("稍显感激", "谢大人明察！");
+
+        const [scenario, introAudio, successAudio] = await Promise.all([
+          scenarioPromise, 
+          introSpeechPromise,
+          successSpeechPromise
+        ]);
+        
+        setCurrentScenario(scenario);
+        setSuccessAudioData(successAudio);
+        setSelectedOption(null);
+        setFeedback(null);
+        setView('case');
+        if (introAudio) {
+          playAudio(introAudio);
+        }
+      } catch (error) {
+        console.error(error);
+        setView('scene');
+      }
     }
   };
 
