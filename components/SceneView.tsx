@@ -16,9 +16,9 @@ export const SceneView: React.FC<SceneViewProps> = ({ gameState, npcs, onBackToM
 
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden">
-      {/* Immersive Scene Background Layer */}
+      {/* Immersive Scene Background Layer - Removed transition classes as requested */}
       <div 
-        className="absolute inset-0 z-0 transition-opacity duration-1000"
+        className="absolute inset-0 z-0"
         style={{ 
           backgroundImage: `url(${bgImage})`, 
           backgroundSize: 'cover', 

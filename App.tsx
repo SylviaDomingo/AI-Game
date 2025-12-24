@@ -79,7 +79,7 @@ export default function App() {
 
     try {
       // 异步加载语音，不阻塞逻辑
-      speakPhrase("大人，请过目。");
+      speakPhrase("大人，帮帮我！！");
       
       const scenario = await generateMagistrateCase(grade, randomSubject, randomPoint, currentLocation);
       setCurrentScenario(scenario);
@@ -125,8 +125,7 @@ export default function App() {
     return (ASSETS.images.backgrounds as any)[gameState.currentLocation] || ASSETS.images.mainBackground;
   };
 
-  return (
-    <div className="max-w-md mx-auto h-screen relative shadow-2xl overflow-hidden border-x border-gray-300 flex flex-col bg-[#f4ece1]">
+  return (<div className="max-w-md mx-auto h-screen relative shadow-2xl overflow-hidden border-x border-gray-300 flex flex-col bg-[#f4ece1]">
       <div 
         className="absolute inset-0 opacity-40 pointer-events-none transition-all duration-1000 select-none z-0"
         style={{ 
@@ -155,11 +154,10 @@ export default function App() {
       {gameState && (view === 'scene' || view === 'case' || view === 'loading') && (
         <>
           <GameHeader state={gameState} />
-          <div className="flex-1 overflow-hidden z-20 relative flex flex-col">
+          <div className="flex-1 overflow-y-auto z-20 relative flex flex-col pb-6">
             {view === 'loading' && <LoadingView />}
 
             {view === 'scene' && (
-              <div className="flex-1 overflow-y-auto pb-6">
                 <SceneView 
                   gameState={gameState} 
                   npcs={visibleNPCs} 
@@ -167,12 +165,10 @@ export default function App() {
                   onStartCase={startCase}
                   onRest={handleRest}
                 />
-              </div>
             )}
 
             {view === 'case' && currentScenario && activeNPC && (
-              <div className="flex-1 overflow-hidden">
-                {currentScenario.type === 'mystery' ? (
+              currentScenario.type === 'mystery' ? (
                   <MysteryDialogueView 
                     currentScenario={currentScenario}
                     activeNPC={activeNPC}
@@ -180,7 +176,6 @@ export default function App() {
                     onCloseCase={() => { advanceTime(); setView('scene'); }}
                   />
                 ) : (
-                  <div className="h-full overflow-y-auto pb-6">
                     <CaseView 
                       currentScenario={currentScenario}
                       activeNPC={activeNPC}
@@ -189,9 +184,7 @@ export default function App() {
                       onSelectOption={handleOptionSelect}
                       onCloseCase={() => { advanceTime(); setView('scene'); }}
                     />
-                  </div>
-                )}
-              </div>
+              )
             )}
           </div>
         </>
