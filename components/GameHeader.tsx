@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GameState } from '../types';
+import { GameState, RANKS } from '../types';
 import { ASSETS } from '../constants/assets';
 import { TimeIndicator } from './TimeIndicator';
 
@@ -12,6 +12,14 @@ interface GameHeaderProps {
 
 export const GameHeader: React.FC<GameHeaderProps> = ({ state, isMuted, onToggleMute }) => {
   const [showSkills, setShowSkills] = useState(false);
+  const currentRank = RANKS[state.rankIndex];
+
+  const skillItems = [
+    { icon: '🌾', label: '农业', val: state.skills.agriculture, color: 'bg-green-600' },
+    { icon: '💰', label: '财政', val: state.skills.finance, color: 'bg-amber-600' },
+    { icon: '🏮', label: '民生', val: state.skills.livelihood, color: 'bg-blue-600' },
+    { icon: '📜', label: '文化', val: state.skills.culture, color: 'bg-purple-600' }
+  ];
 
   return (
     <div className="bg-[#dcd3c1]/95 backdrop-blur-md border-b-2 border-gray-800 sticky top-0 z-30 shadow-md">
@@ -27,7 +35,9 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ state, isMuted, onToggle
             </div>
           </button>
           <div className="flex flex-col">
-            <span className="font-calligraphy text-base leading-tight">{state.playerName} 县令</span>
+            <span className="font-calligraphy text-base leading-tight">
+              {state.playerName} <span className="text-red-900 font-bold ml-1">{currentRank}</span>
+            </span>
             <TimeIndicator time={state.currentTime} day={state.day} />
           </div>
         </div>
@@ -54,29 +64,24 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ state, isMuted, onToggle
         </div>
       </div>
 
-      {/* Governing Skills Panel */}
       {showSkills && (
-        <div className="bg-[#f4ece1] p-3 grid grid-cols-4 gap-2 border-t border-gray-300 animate-in slide-in-from-top duration-300">
-          <div className="flex flex-col items-center p-2 bg-white/60 rounded-lg border border-gray-200">
-            <span className="text-lg">🌾</span>
-            <span className="text-[10px] font-bold text-gray-500">农业</span>
-            <span className="font-serif font-bold text-green-900">{state.skills.agriculture}</span>
+        <div className="bg-[#f4ece1] p-3 border-t border-gray-300 animate-in slide-in-from-top duration-300">
+          <div className="grid grid-cols-4 gap-2 mb-2">
+            {skillItems.map((s, idx) => (
+              <div key={idx} className="flex flex-col items-center p-2 bg-white/60 rounded-lg border border-gray-200">
+                <span className="text-lg">{s.icon}</span>
+                <span className="text-[10px] font-bold text-gray-500">{s.label}</span>
+                <span className="font-serif font-bold text-gray-800 text-xs">{s.val} / 100</span>
+                <div className="w-full h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden border border-gray-300">
+                  <div 
+                    className={`h-full ${s.color} transition-all duration-1000`} 
+                    style={{ width: `${Math.min(100, s.val)}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="flex flex-col items-center p-2 bg-white/60 rounded-lg border border-gray-200">
-            <span className="text-lg">💰</span>
-            <span className="text-[10px] font-bold text-gray-500">财政</span>
-            <span className="font-serif font-bold text-amber-900">{state.skills.finance}</span>
-          </div>
-          <div className="flex flex-col items-center p-2 bg-white/60 rounded-lg border border-gray-200">
-            <span className="text-lg">🏮</span>
-            <span className="text-[10px] font-bold text-gray-500">民生</span>
-            <span className="font-serif font-bold text-blue-900">{state.skills.livelihood}</span>
-          </div>
-          <div className="flex flex-col items-center p-2 bg-white/60 rounded-lg border border-gray-200">
-            <span className="text-lg">📜</span>
-            <span className="text-[10px] font-bold text-gray-500">文化</span>
-            <span className="font-serif font-bold text-purple-900">{state.skills.culture}</span>
-          </div>
+          <p className="text-[8px] text-center text-gray-400 font-serif italic">四项皆满 100 即可呈禀朝廷申请升迁</p>
         </div>
       )}
     </div>

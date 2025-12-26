@@ -19,8 +19,12 @@ export enum Location {
   Market = '集市',
   Bank = '钱庄',
   Suburbs = '县郊',
-  Farmland = '农田'
+  Farmland = '农田',
+  Academy = '书院',
+  ImperialCity = '皇城'
 }
+
+export const RANKS = ['县令', '知府', '刺史', '侍郎', '尚书', '宰相'];
 
 export enum TimeOfDay {
   Morning = '清晨',
@@ -73,6 +77,7 @@ export interface GameState {
   currentTime: TimeOfDay;
   day: number;
   skills: GoverningSkills;
+  rankIndex: number;
 }
 
 export interface NPC {

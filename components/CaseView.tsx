@@ -57,15 +57,15 @@ export const CaseView: React.FC<CaseViewProps> = ({
          </div>
          
          <div className="flex items-start space-x-4 mb-6">
-            <div className="relative">
-              <img src={activeNPC.portrait} alt="NPC" className="w-16 h-16 rounded-xl border-2 border-gray-400 p-0.5 bg-gray-50 shadow-inner" />
+            <div className="relative flex-shrink-0">
+              <img src={activeNPC.portrait} alt="NPC" className="w-16 h-16 rounded-xl border-2 border-gray-400 p-0.5 bg-gray-50 shadow-inner object-cover" />
               {isMystery && mysteryHint && (
                 <div className="absolute -top-2 -right-2 bg-yellow-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold animate-bounce shadow-md">!</div>
               )}
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="font-calligraphy text-gray-600 text-sm">【{activeNPC.name}】</span>
-              <p className="text-gray-800 font-serif leading-relaxed text-lg mt-1 italic">
+              <p className="text-gray-800 font-serif leading-relaxed text-lg mt-1 italic break-words">
                 “{currentScenario.description}”
               </p>
             </div>

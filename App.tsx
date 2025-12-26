@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GradeLevel, Subject, Scenario, GameState, Location, TimeOfDay, NPC, QueuedCase, GoverningSkills } from './types';
+import { GradeLevel, Subject, Scenario, GameState, Location, TimeOfDay, NPC, QueuedCase, GoverningSkills, RANKS } from './types';
 import { CURRICULUM } from './data/curriculum';
 import { generateMagistrateCase, generateSpeech, playAudio, generateAmbientMusic } from './services/ai';
 import { ASSETS } from './constants/assets';
@@ -15,21 +15,23 @@ import { LoadingView } from './components/LoadingView';
 import { SceneView } from './components/SceneView';
 import { CaseView } from './components/CaseView';
 import { MysteryDialogueView } from './components/MysteryDialogueView';
+import { PromotionView } from './components/PromotionView';
 
-const QUEUE_TARGET_SIZE = 2; // 保持队列中有两个问题
+const QUEUE_TARGET_SIZE = 2;
 
-// 地点与学科映射表
-const LOCATION_SUBJECTS: Record<Location, Subject[]> = {
+const LOCATION_SUBJECTS: Record<string, Subject[]> = {
   [Location.Farmland]: ['数学', '科学', '地理'],
   [Location.Office]: ['数学', '道德与法治'],
   [Location.Market]: ['数学', '历史'],
   [Location.Bank]: ['数学'],
-  [Location.Suburbs]: ['语文']
+  [Location.Suburbs]: ['语文'],
+  [Location.Academy]: ['语文', '历史', '科学'],
+  [Location.ImperialCity]: ['语文', '历史', '道德与法治']
 };
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
-  const [view, setView] = useState<'start' | 'intro' | 'map' | 'loading' | 'scene' | 'case'>('start');
+  const [view, setView] = useState<'start' | 'intro' | 'map' | 'loading' | 'scene' | 'case' | 'promotion'>('start');
   const [currentScenario, setCurrentScenario] = useState<Scenario | null>(null);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -37,21 +39,14 @@ export default function App() {
   const [successAudioData, setSuccessAudioData] = useState<string | null>(null);
   const [skillGainHint, setSkillGainHint] = useState<string | null>(null);
   
-  // 案件预加载队列
-  const [caseQueues, setCaseQueues] = useState<Record<Location, QueuedCase[]>>({
-    [Location.Office]: [],
-    [Location.Market]: [],
-    [Location.Bank]: [],
-    [Location.Suburbs]: [],
-    [Location.Farmland]: []
+  const [caseQueues, setCaseQueues] = useState<Record<string, QueuedCase[]>>({
+    [Location.Office]: [], [Location.Market]: [], [Location.Bank]: [], [Location.Suburbs]: [],
+    [Location.Farmland]: [], [Location.Academy]: [], [Location.ImperialCity]: []
   });
 
-  // 正在生成的地点标记
-  const generatingLocations = useRef<Set<Location>>(new Set());
-
-  // 背景音乐相关状态
-  const [isMuted, setIsMuted] = useState(false);
+  const generatingLocations = useRef<Set<string>>(new Set());
   const bgmSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
     const initBGM = async () => {
@@ -61,78 +56,48 @@ export default function App() {
         bgmSourceRef.current = source;
       }
     };
-    initBGM();
-    
-    return () => {
-      if (bgmSourceRef.current) {
-        bgmSourceRef.current.stop();
-      }
-    };
+    // initBGM();
+    return () => bgmSourceRef.current?.stop();
   }, []);
 
   const toggleMute = () => {
     if (bgmSourceRef.current) {
       const ctx = bgmSourceRef.current.context as any;
-      if (!isMuted) {
-        if (ctx.suspend) ctx.suspend();
-      } else {
-        if (ctx.resume) ctx.resume();
-      }
+      if (!isMuted) ctx.suspend?.(); else ctx.resume?.();
     }
     setIsMuted(!isMuted);
   };
 
-  // 根据地点和年级获取可用学科
   const getSubjectForLocation = (loc: Location, grade: GradeLevel): Subject => {
-    const allowedSubjects = LOCATION_SUBJECTS[loc];
+    const allowedSubjects = LOCATION_SUBJECTS[loc] || ['数学'];
     const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
     const availableSubjectsInCurriculum = Object.keys(curriculumForGrade) as Subject[];
-    
-    // 取交集
     const validSubjects = allowedSubjects.filter(s => availableSubjectsInCurriculum.includes(s));
-    
-    // 如果没有交集，退而求其次选择允许的第一个学科，或者课程里随机一个
-    if (validSubjects.length === 0) {
-      return availableSubjectsInCurriculum[Math.floor(Math.random() * availableSubjectsInCurriculum.length)];
-    }
-    
-    return validSubjects[Math.floor(Math.random() * validSubjects.length)];
+    return validSubjects.length > 0 
+      ? validSubjects[Math.floor(Math.random() * validSubjects.length)]
+      : availableSubjectsInCurriculum[Math.floor(Math.random() * availableSubjectsInCurriculum.length)];
   };
 
-  // 后台预加载逻辑
   const refillQueues = useCallback(async () => {
+    return;
     if (!gameState) return;
-
     const locations = Object.values(Location);
     for (const loc of locations) {
       if (caseQueues[loc].length < QUEUE_TARGET_SIZE && !generatingLocations.current.has(loc)) {
         generatingLocations.current.add(loc);
-        
         (async () => {
           try {
             const grade = gameState.grade;
             const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
-            
             const randomSubject = getSubjectForLocation(loc, grade);
             const points = curriculumForGrade[randomSubject] || ['基础常识'];
             const randomPoint = points[Math.floor(Math.random() * points.length)];
-
-            const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, loc);
-            const introSpeechPromise = generateSpeech("稍显急切", "大人，帮帮我！");
-            const successSpeechPromise = generateSpeech("稍显感激", "谢大人明察！");
-
             const [scenario, introAudio, successAudio] = await Promise.all([
-              scenarioPromise, 
-              introSpeechPromise,
-              successSpeechPromise
+              generateMagistrateCase(grade, randomSubject, randomPoint, loc),
+              generateSpeech("稍显急切", "大人，帮帮我！"),
+              generateSpeech("稍显感激", "谢大人明察！")
             ]);
-
-            setCaseQueues(prev => ({
-              ...prev,
-              [loc]: [...prev[loc], { scenario, introAudio, successAudio }]
-            }));
-            
-            // 递归填充直到满足目标
+            setCaseQueues(prev => ({ ...prev, [loc]: [...prev[loc], { scenario, introAudio, successAudio }] }));
             setTimeout(() => refillQueues(), 500);
           } catch (err) {
             console.error(`Pre-loading failed for ${loc}:`, err);
@@ -145,27 +110,15 @@ export default function App() {
   }, [gameState, caseQueues]);
 
   useEffect(() => {
-    if (view === 'map' || view === 'scene') {
-      refillQueues();
-    }
+    if (view === 'map' || view === 'scene') refillQueues();
   }, [view, refillQueues]);
 
   const startNewGame = (name: string, grade: GradeLevel) => {
     setGameState({
-      playerName: name || '张县令',
-      grade,
-      currentScore: 0,
-      reputation: 80,
-      casesSolved: 0,
-      currentLocation: Location.Office,
-      currentTime: TimeOfDay.Morning,
-      day: 1,
-      skills: {
-        agriculture: 0,
-        finance: 0,
-        livelihood: 0,
-        culture: 0
-      }
+      playerName: name || '张县令', grade, currentScore: 0, reputation: 80, casesSolved: 0,
+      currentLocation: Location.Office, currentTime: TimeOfDay.Morning, day: 1,
+      skills: { agriculture: 0, finance: 0, livelihood: 0, culture: 0 },
+      rankIndex: 0
     });
     setView('intro');
   };
@@ -175,23 +128,14 @@ export default function App() {
       if (!prev) return null;
       const times = Object.values(TimeOfDay);
       const currentIndex = times.indexOf(prev.currentTime);
-      if (currentIndex < times.length - 1) {
-        return { ...prev, currentTime: times[currentIndex + 1] };
-      }
-      return prev;
+      return currentIndex < times.length - 1 
+        ? { ...prev, currentTime: times[currentIndex + 1] } 
+        : { ...prev, day: prev.day + 1, currentTime: TimeOfDay.Morning };
     });
   };
 
   const handleRest = () => {
-    setGameState(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        day: prev.day + 1,
-        currentTime: TimeOfDay.Morning,
-        reputation: Math.min(100, prev.reputation + 10)
-      };
-    });
+    setGameState(prev => prev ? { ...prev, day: prev.day + 1, currentTime: TimeOfDay.Morning, reputation: Math.min(100, prev.reputation + 10) } : null);
     new Audio(ASSETS.audio.rest).play().catch(() => {});
     setView('map');
   };
@@ -200,10 +144,8 @@ export default function App() {
     if (gameState?.currentTime === TimeOfDay.Night) return;
     setActiveNPC(npc);
     setSkillGainHint(null);
-
     const loc = gameState!.currentLocation;
     const queue = caseQueues[loc];
-
     if (queue.length > 0) {
       const [{ scenario, introAudio, successAudio }, ...rest] = queue;
       setCaseQueues(prev => ({ ...prev, [loc]: rest }));
@@ -218,22 +160,14 @@ export default function App() {
       setView('loading');
       try {
         const grade = gameState!.grade;
-        const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
-        
         const randomSubject = getSubjectForLocation(loc, grade);
-        const points = curriculumForGrade[randomSubject] || ['基础常识'];
+        const points = (CURRICULUM[grade] || CURRICULUM[GradeLevel.P1])[randomSubject] || ['基础常识'];
         const randomPoint = points[Math.floor(Math.random() * points.length)];
-
-        const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, loc);
-        const introSpeechPromise = generateSpeech("稍显急切", "大人，帮帮我！");
-        const successSpeechPromise = generateSpeech("稍显感激", "谢大人明察！");
-
         const [scenario, introAudio, successAudio] = await Promise.all([
-          scenarioPromise, 
-          introSpeechPromise,
-          successSpeechPromise
+          generateMagistrateCase(grade, randomSubject, randomPoint, loc),
+          generateSpeech("稍显急切", "大人，帮帮我！"),
+          generateSpeech("稍显感激", "谢大人明察！")
         ]);
-        
         setCurrentScenario(scenario);
         setSuccessAudioData(successAudio);
         setSelectedOption(null);
@@ -252,36 +186,20 @@ export default function App() {
     setSelectedOption(index);
     const option = currentScenario.options[index];
     setFeedback(option.feedback);
-    
     new Audio(option.isCorrect ? ASSETS.audio.correct : ASSETS.audio.wrong).play().catch(() => {});
 
     setGameState(prev => {
       if (!prev) return null;
       const newSkills = { ...prev.skills };
-      
       if (option.isCorrect) {
-        // 根据地点增加技能值
         const loc = prev.currentLocation;
         let hint = "";
-        if (loc === Location.Farmland) {
-          newSkills.agriculture += 10;
-          hint = "🌾 农业经验 +10";
-        }
-        else if (loc === Location.Bank) {
-          newSkills.finance += 10;
-          hint = "💰 财政经验 +10";
-        }
-        else if (loc === Location.Office || loc === Location.Market) {
-          newSkills.livelihood += 10;
-          hint = "🏮 民生经验 +10";
-        }
-        else if (loc === Location.Suburbs) {
-          newSkills.culture += 10;
-          hint = "📜 文化经验 +10";
-        }
+        if (loc === Location.Farmland) { newSkills.agriculture += 10; hint = "🌾 农业经验 +10"; }
+        else if (loc === Location.Bank) { newSkills.finance += 10; hint = "💰 财政经验 +10"; }
+        else if (loc === Location.Office || loc === Location.Market || loc === Location.ImperialCity) { newSkills.livelihood += 10; hint = "🏮 民生经验 +10"; }
+        else if (loc === Location.Suburbs || loc === Location.Academy) { newSkills.culture += 10; hint = "📜 文化经验 +10"; }
         setSkillGainHint(hint);
       }
-
       return {
         ...prev,
         currentScore: option.isCorrect ? prev.currentScore + 20 : prev.currentScore,
@@ -290,6 +208,30 @@ export default function App() {
         skills: newSkills
       };
     });
+  };
+
+  const handleCaseClose = () => {
+    if (gameState && 
+        gameState.skills.agriculture >= 100 && 
+        gameState.skills.finance >= 100 && 
+        gameState.skills.livelihood >= 100 && 
+        gameState.skills.culture >= 100 && 
+        gameState.rankIndex < RANKS.length - 1) {
+      setView('promotion');
+    } else {
+      advanceTime();
+      setView('scene');
+    }
+  };
+
+  const handlePromotionComplete = () => {
+    setGameState(prev => prev ? {
+      ...prev,
+      rankIndex: prev.rankIndex + 1,
+      skills: { agriculture: 0, finance: 0, livelihood: 0, culture: 0 },
+      currentLocation: Location.Office // Reset to office or relevant seat of power
+    } : null);
+    setView('map');
   };
 
   const navigateToLocation = (loc: Location) => {
@@ -308,72 +250,24 @@ export default function App() {
 
   return (
     <div className="max-w-md mx-auto h-screen relative shadow-2xl overflow-hidden border-x border-gray-300 flex flex-col bg-[#f4ece1]">
-      <div 
-        className="absolute inset-0 opacity-40 pointer-events-none select-none z-0"
-        style={{ 
-          backgroundImage: `url(${getGlobalBg()})`, 
-          backgroundSize: 'cover', 
-          backgroundPosition: 'center' 
-        }}
-      ></div>
+      <div className="absolute inset-0 opacity-40 pointer-events-none select-none z-0" style={{ backgroundImage: `url(${getGlobalBg()})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
 
       {view === 'start' && <StartView onStart={startNewGame} />}
-      
-      {view === 'intro' && gameState && (
-        <IntroView 
-          playerName={gameState.playerName} 
-          onComplete={() => setView('map')} 
-        />
-      )}
-
-      {view === 'map' && gameState && (
-        <MapView 
-          currentLocation={gameState.currentLocation} 
-          onSelectLocation={navigateToLocation} 
-        />
-      )}
+      {view === 'intro' && gameState && <IntroView playerName={gameState.playerName} onComplete={() => setView('map')} />}
+      {view === 'map' && gameState && <MapView rankIndex={gameState.rankIndex} onSelectLocation={navigateToLocation} />}
+      {view === 'promotion' && gameState && <PromotionView rankIndex={gameState.rankIndex} onComplete={handlePromotionComplete} />}
 
       {gameState && (view === 'scene' || view === 'case' || view === 'loading') && (
         <>
-          <GameHeader 
-            state={gameState} 
-            isMuted={isMuted} 
-            onToggleMute={toggleMute} 
-          />
+          <GameHeader state={gameState} isMuted={isMuted} onToggleMute={toggleMute} />
           <div className="flex-1 overflow-y-auto z-20 relative flex flex-col pb-6">
             {view === 'loading' && <LoadingView />}
-
-            {view === 'scene' && (
-                <SceneView 
-                  gameState={gameState} 
-                  npcs={visibleNPCs} 
-                  onBackToMap={() => setView('map')} 
-                  onStartCase={startCase}
-                  onRest={handleRest}
-                />
-            )}
-
+            {view === 'scene' && <SceneView gameState={gameState} npcs={visibleNPCs} onBackToMap={() => setView('map')} onStartCase={startCase} onRest={handleRest} />}
             {view === 'case' && currentScenario && activeNPC && (
               currentScenario.type === 'mystery' ? (
-                  <MysteryDialogueView 
-                    currentScenario={currentScenario}
-                    activeNPC={activeNPC}
-                    successAudioData={successAudioData}
-                    skillGainHint={skillGainHint}
-                    onSelectCorrect={handleOptionSelect}
-                    onCloseCase={() => { advanceTime(); setView('scene'); }}
-                  />
-                ) : (
-                    <CaseView 
-                      currentScenario={currentScenario}
-                      activeNPC={activeNPC}
-                      successAudioData={successAudioData}
-                      skillGainHint={skillGainHint}
-                      selectedOption={selectedOption}
-                      feedback={feedback}
-                      onSelectOption={handleOptionSelect}
-                      onCloseCase={() => { advanceTime(); setView('scene'); }}
-                    />
+                <MysteryDialogueView currentScenario={currentScenario} activeNPC={activeNPC} successAudioData={successAudioData} skillGainHint={skillGainHint} onSelectCorrect={handleOptionSelect} onCloseCase={handleCaseClose} />
+              ) : (
+                <CaseView currentScenario={currentScenario} activeNPC={activeNPC} successAudioData={successAudioData} skillGainHint={skillGainHint} selectedOption={selectedOption} feedback={feedback} onSelectOption={handleOptionSelect} onCloseCase={handleCaseClose} />
               )
             )}
           </div>

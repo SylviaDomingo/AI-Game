@@ -6,10 +6,10 @@ export const NPCS: NPC[] = [
   {
     id: 'master_clerk',
     name: '师爷',
-    title: '县衙二把手',
+    title: '官衙二把手',
     portrait: "https://api.dicebear.com/7.x/bottts/svg?seed=MasterClerk",
     location: Location.Office,
-    greeting: '大人，这是新送达的卷宗，请过目。',
+    greeting: '大人，这是新送达的公文卷宗，请批阅。',
     availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon, TimeOfDay.Dusk]
   },
   {
@@ -18,7 +18,7 @@ export const NPCS: NPC[] = [
     title: '市集豪爽人',
     portrait: ASSETS.images.npcPortraits.ButcherLi,
     location: Location.Market,
-    greeting: '嘿！县令大人，正好有个算不明白的账，您给瞧瞧？',
+    greeting: '嘿！县令大人，这账目有些算不明白，您给瞧瞧？',
     availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon]
   },
   {
@@ -27,7 +27,7 @@ export const NPCS: NPC[] = [
     title: '走街串巷商',
     portrait: ASSETS.images.npcPortraits.VendorWang,
     location: Location.Market,
-    greeting: '大人，这批货物的成色，小的实在拿不准。',
+    greeting: '大人，这批货的斤两，小的实在不敢拿准。',
     availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon, TimeOfDay.Dusk]
   },
   {
@@ -36,16 +36,16 @@ export const NPCS: NPC[] = [
     title: '大通钱庄主',
     portrait: ASSETS.images.npcPortraits.MoneyMasterHan,
     location: Location.Bank,
-    greeting: '大人，近日钱庄账目有些出入，还请大人协助清查。',
+    greeting: '大人，近日钱庄账目有异，还请大人清察。',
     availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon]
   },
   {
     id: 'zhang_elder',
     name: '张老伯',
-    title: '县郊百事通',
+    title: '乡野百事通',
     portrait: ASSETS.images.npcPortraits.ElderZhang,
     location: Location.Suburbs,
-    greeting: '大人巡视至此，老朽刚好发现此处石碑有些蹊跷。',
+    greeting: '大人巡视至此，老朽刚好发现此处石碑大有深意。',
     availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon, TimeOfDay.Dusk]
   },
   {
@@ -54,7 +54,25 @@ export const NPCS: NPC[] = [
     title: '田间勤劳人',
     portrait: ASSETS.images.npcPortraits.FarmerZhao,
     location: Location.Farmland,
-    greeting: '大人，今年这田里的收成估算，老汉我心里没底。',
+    greeting: '大人，今年这亩产估算，老汉我心里实在没底。',
     availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon, TimeOfDay.Dusk]
+  },
+  {
+    id: 'scholar_lin',
+    name: '林山长',
+    title: '书院大儒',
+    portrait: ASSETS.images.npcPortraits.ScholarLin,
+    location: Location.Academy,
+    greeting: '大人大驾光临，学子们正有些诗经释义想向大人请教。',
+    availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon, TimeOfDay.Dusk]
+  },
+  {
+    id: 'wei_eunuch',
+    name: '魏公公',
+    title: '内廷总管',
+    portrait: ASSETS.images.npcPortraits.EunuchWei,
+    location: Location.ImperialCity,
+    greeting: '官家口谕，命尔速查此桩御史失踪案。',
+    availableTimes: [TimeOfDay.Morning, TimeOfDay.Noon, TimeOfDay.Dusk, TimeOfDay.Night]
   }
 ];

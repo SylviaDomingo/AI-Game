@@ -11,7 +11,9 @@ export const ASSETS = {
       [Location.Market]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/market.png", 
       [Location.Bank]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/bank.png", 
       [Location.Suburbs]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/suburb.png", 
-      [Location.Farmland]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/farmland.png" 
+      [Location.Farmland]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/farmland.png",
+      [Location.Academy]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/suburb.png", // Reuse suburb as placeholder
+      [Location.ImperialCity]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/shengtang_pic.png" // Reuse office as placeholder
     },
     npcPortraits: {
       ButcherLi: "https://api.dicebear.com/7.x/bottts/svg?seed=ButcherLi",
@@ -19,7 +21,9 @@ export const ASSETS = {
       ElderZhang: "https://api.dicebear.com/7.x/bottts/svg?seed=ElderZhang",
       FarmerZhao: "https://api.dicebear.com/7.x/bottts/svg?seed=FarmerZhao",
       VendorWang: "https://api.dicebear.com/7.x/bottts/svg?seed=VendorWang",
-      MoneyMasterHan: "https://api.dicebear.com/7.x/bottts/svg?seed=MoneyMasterHan"
+      MoneyMasterHan: "https://api.dicebear.com/7.x/bottts/svg?seed=MoneyMasterHan",
+      ScholarLin: "https://api.dicebear.com/7.x/bottts/svg?seed=ScholarLin",
+      EunuchWei: "https://api.dicebear.com/7.x/bottts/svg?seed=EunuchWei"
     }
   },
   audio: {
