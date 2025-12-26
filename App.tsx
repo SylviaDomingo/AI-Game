@@ -17,7 +17,7 @@ import { CaseView } from './components/CaseView';
 import { MysteryDialogueView } from './components/MysteryDialogueView';
 import { PromotionView } from './components/PromotionView';
 
-const QUEUE_TARGET_SIZE = 2;
+const QUEUE_TARGET_SIZE = 1;
 
 const LOCATION_SUBJECTS: Record<string, Subject[]> = {
   [Location.Farmland]: ['数学', '科学', '地理'],
@@ -56,6 +56,8 @@ export default function App() {
         bgmSourceRef.current = source;
       }
     };
+
+    // BGM 预载
     // initBGM();
     return () => bgmSourceRef.current?.stop();
   }, []);
@@ -79,6 +81,7 @@ export default function App() {
   };
 
   const refillQueues = useCallback(async () => {
+    // 题目预载
     return;
     if (!gameState) return;
     const locations = Object.values(Location);
