@@ -19,7 +19,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({ state, isMuted, onToggle
         <div className="flex items-center space-x-3">
           <button 
             onClick={() => setShowSkills(!showSkills)}
-            className="animate-portrait-idle focus:outline-none group relative"
+            className="focus:outline-none group relative"
           >
             <img src={ASSETS.images.magistratePortrait} alt="Magistrate" className="w-10 h-10 rounded-full border border-gray-600 bg-white shadow-sm group-hover:ring-2 group-hover:ring-red-900 transition-all" />
             <div className="absolute -bottom-1 -right-1 bg-red-900 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center border border-white">

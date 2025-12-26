@@ -61,7 +61,7 @@ export default function App() {
         bgmSourceRef.current = source;
       }
     };
-    // initBGM();
+    initBGM();
     
     return () => {
       if (bgmSourceRef.current) {
@@ -101,7 +101,6 @@ export default function App() {
 
   // 后台预加载逻辑
   const refillQueues = useCallback(async () => {
-    return;
     if (!gameState) return;
 
     const locations = Object.values(Location);
