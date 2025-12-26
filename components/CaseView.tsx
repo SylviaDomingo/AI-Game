@@ -8,6 +8,7 @@ interface CaseViewProps {
   currentScenario: Scenario;
   activeNPC: NPC;
   successAudioData: string | null;
+  skillGainHint: string | null;
   selectedOption: number | null;
   feedback: string | null;
   onSelectOption: (idx: number) => void;
@@ -15,7 +16,7 @@ interface CaseViewProps {
 }
 
 export const CaseView: React.FC<CaseViewProps> = ({ 
-  currentScenario, activeNPC, successAudioData, selectedOption, feedback, onSelectOption, onCloseCase 
+  currentScenario, activeNPC, successAudioData, skillGainHint, selectedOption, feedback, onSelectOption, onCloseCase 
 }) => {
   const [mysteryHint, setMysteryHint] = useState<string | null>(null);
   const [wrongAttempts, setWrongAttempts] = useState<number[]>([]);
@@ -139,9 +140,16 @@ export const CaseView: React.FC<CaseViewProps> = ({
           <div className="absolute top-4 right-6 text-6xl opacity-10 select-none font-calligraphy">
             {currentScenario.options[selectedOption].isCorrect ? '明' : '偏'}
           </div>
-          <h4 className={`font-calligraphy text-3xl mb-3 ${currentScenario.options[selectedOption].isCorrect ? 'text-green-800' : 'text-red-800'}`}>
-            {currentScenario.options[selectedOption].isCorrect ? '『 明察秋毫 』' : '『 查无实据 』'}
-          </h4>
+          <div className="flex justify-between items-start mb-3">
+            <h4 className={`font-calligraphy text-3xl ${currentScenario.options[selectedOption].isCorrect ? 'text-green-800' : 'text-red-800'}`}>
+              {currentScenario.options[selectedOption].isCorrect ? '『 明察秋毫 』' : '『 查无实据 』'}
+            </h4>
+            {currentScenario.options[selectedOption].isCorrect && skillGainHint && (
+              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold animate-bounce shadow-sm border border-green-200">
+                {skillGainHint}
+              </span>
+            )}
+          </div>
           <p className="text-gray-700 italic mb-6 font-serif border-l-4 border-gray-200 pl-4">“{feedback}”</p>
           <div className="bg-white/80 p-4 rounded-xl text-sm border-2 border-dashed border-gray-300 shadow-inner">
              <p className="font-bold text-gray-500 mb-2 tracking-widest uppercase text-xs">【夫子点评 · {currentScenario.knowledgePoint}】</p>

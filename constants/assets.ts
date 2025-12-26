@@ -8,7 +8,7 @@ export const ASSETS = {
     mainBackground: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/map_picture.png",
     backgrounds: {
       [Location.Office]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/shengtang_pic.png", 
-      [Location.Market]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/market.jpg", 
+      [Location.Market]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/market.png", 
       [Location.Bank]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/bank.png", 
       [Location.Suburbs]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/suburb.png", 
       [Location.Farmland]: "https://raw.githubusercontent.com/SylviaDomingo/AI-Game/65cdb71fc4839511515958cef7348719b7c6d1dd/assets/farmland.png" 

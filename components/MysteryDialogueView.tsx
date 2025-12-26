@@ -15,12 +15,13 @@ interface MysteryDialogueViewProps {
   currentScenario: Scenario;
   activeNPC: NPC;
   successAudioData: string | null;
+  skillGainHint: string | null;
   onSelectCorrect: (idx: number) => void;
   onCloseCase: () => void;
 }
 
 export const MysteryDialogueView: React.FC<MysteryDialogueViewProps> = ({ 
-  currentScenario, activeNPC, successAudioData, onSelectCorrect, onCloseCase 
+  currentScenario, activeNPC, successAudioData, skillGainHint, onSelectCorrect, onCloseCase 
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     { id: 'start', sender: 'npc', text: currentScenario.description, timestamp: Date.now() }
@@ -140,16 +141,23 @@ export const MysteryDialogueView: React.FC<MysteryDialogueViewProps> = ({
           </div>
         ) : (
           <div className="p-6 rounded-3xl bg-[#fffbf2] border-2 border-gray-800 shadow-2xl animate-in zoom-in duration-500 ring-4 ring-black/5">
-             <div className="flex items-center space-x-2 mb-4">
-               <span className="text-2xl filter drop-shadow-sm">📖</span>
-               <p className="font-bold text-gray-600 tracking-widest uppercase text-xs">【 夫子点评 · {currentScenario.knowledgePoint} 】</p>
+             <div className="flex items-center justify-between mb-4">
+               <div className="flex items-center space-x-2">
+                <span className="text-2xl filter drop-shadow-sm">📖</span>
+                <p className="font-bold text-gray-600 tracking-widest uppercase text-xs">【 破案成功 】</p>
+               </div>
+               {skillGainHint && (
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold animate-bounce shadow-sm border border-green-200">
+                  {skillGainHint}
+                </span>
+               )}
              </div>
-             <p className="text-gray-800 leading-relaxed font-serif text-base bg-white/60 p-4 rounded-xl border border-dashed border-gray-400 shadow-inner">
+             <p className="text-gray-800 leading-relaxed font-serif text-sm bg-white/60 p-4 rounded-xl border border-dashed border-gray-400 shadow-inner mb-2">
                {currentScenario.educationalNote}
              </p>
              <button 
               onClick={onCloseCase} 
-              className="w-full mt-5 py-5 bg-gray-900 text-white rounded-2xl font-calligraphy text-2xl shadow-xl hover:bg-black active:scale-95 transition-all border-b-4 border-black"
+              className="w-full mt-3 py-5 bg-gray-900 text-white rounded-2xl font-calligraphy text-2xl shadow-xl hover:bg-black active:scale-95 transition-all border-b-4 border-black"
             >
               朱批 · 结案
             </button>

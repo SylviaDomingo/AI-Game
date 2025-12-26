@@ -56,6 +56,13 @@ export interface QueuedCase {
   successAudio: string | null;
 }
 
+export interface GoverningSkills {
+  agriculture: number;
+  finance: number;
+  livelihood: number;
+  culture: number;
+}
+
 export interface GameState {
   playerName: string;
   grade: GradeLevel;
@@ -65,6 +72,7 @@ export interface GameState {
   currentLocation: Location;
   currentTime: TimeOfDay;
   day: number;
+  skills: GoverningSkills;
 }
 
 export interface NPC {
