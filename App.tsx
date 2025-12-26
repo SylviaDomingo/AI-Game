@@ -18,6 +18,15 @@ import { MysteryDialogueView } from './components/MysteryDialogueView';
 
 const QUEUE_TARGET_SIZE = 2; // 保持队列中有两个问题
 
+// 地点与学科映射表
+const LOCATION_SUBJECTS: Record<Location, Subject[]> = {
+  [Location.Farmland]: ['数学', '科学', '地理'],
+  [Location.Office]: ['数学', '道德与法治'],
+  [Location.Market]: ['数学', '历史'],
+  [Location.Bank]: ['数学'],
+  [Location.Suburbs]: ['语文']
+};
+
 export default function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [view, setView] = useState<'start' | 'intro' | 'map' | 'loading' | 'scene' | 'case'>('start');
@@ -73,6 +82,23 @@ export default function App() {
     setIsMuted(!isMuted);
   };
 
+  // 根据地点和年级获取可用学科
+  const getSubjectForLocation = (loc: Location, grade: GradeLevel): Subject => {
+    const allowedSubjects = LOCATION_SUBJECTS[loc];
+    const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
+    const availableSubjectsInCurriculum = Object.keys(curriculumForGrade) as Subject[];
+    
+    // 取交集
+    const validSubjects = allowedSubjects.filter(s => availableSubjectsInCurriculum.includes(s));
+    
+    // 如果没有交集，退而求其次选择允许的第一个学科，或者课程里随机一个
+    if (validSubjects.length === 0) {
+      return availableSubjectsInCurriculum[Math.floor(Math.random() * availableSubjectsInCurriculum.length)];
+    }
+    
+    return validSubjects[Math.floor(Math.random() * validSubjects.length)];
+  };
+
   // 后台预加载逻辑
   const refillQueues = useCallback(async () => {
     return;
@@ -87,9 +113,9 @@ export default function App() {
           try {
             const grade = gameState.grade;
             const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
-            const subjects = Object.keys(curriculumForGrade);
-            const randomSubject = subjects[Math.floor(Math.random() * subjects.length)] as Subject;
-            const points = curriculumForGrade[randomSubject];
+            
+            const randomSubject = getSubjectForLocation(loc, grade);
+            const points = curriculumForGrade[randomSubject] || ['基础常识'];
             const randomPoint = points[Math.floor(Math.random() * points.length)];
 
             const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, loc);
@@ -194,9 +220,9 @@ export default function App() {
       try {
         const grade = gameState!.grade;
         const curriculumForGrade = CURRICULUM[grade] || CURRICULUM[GradeLevel.P1];
-        const subjects = Object.keys(curriculumForGrade);
-        const randomSubject = subjects[Math.floor(Math.random() * subjects.length)] as Subject;
-        const points = curriculumForGrade[randomSubject];
+        
+        const randomSubject = getSubjectForLocation(loc, grade);
+        const points = curriculumForGrade[randomSubject] || ['基础常识'];
         const randomPoint = points[Math.floor(Math.random() * points.length)];
 
         const scenarioPromise = generateMagistrateCase(grade, randomSubject, randomPoint, loc);
